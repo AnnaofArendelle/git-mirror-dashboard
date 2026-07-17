@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from '@/lib/auth-context';
 import { AnnouncementProvider } from '@/lib/store';
+import { ToastProvider } from '@/components/ui/toast';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { AppShell } from '@/components/layout/app-shell';
 
 export const metadata: Metadata = {
@@ -19,9 +21,13 @@ export default function RootLayout({
       <body className="h-full font-sans bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
         <AuthProvider>
           <AnnouncementProvider>
-            <AppShell>
-              {children}
-            </AppShell>
+            <ToastProvider>
+              <ErrorBoundary>
+                <AppShell>
+                  {children}
+                </AppShell>
+              </ErrorBoundary>
+            </ToastProvider>
           </AnnouncementProvider>
         </AuthProvider>
       </body>

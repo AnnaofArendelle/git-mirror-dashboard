@@ -9,6 +9,7 @@ import { useAnnouncements, useAnnouncement } from '@/lib/store';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Send, Save, Eye, X } from 'lucide-react';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 
 const priorityOptions = [
   { value: 'normal', label: '普通' },
@@ -194,15 +195,7 @@ export default function EditAnnouncementPage({ params }: { params: Promise<{ id:
                 <span className="text-sm font-medium text-zinc-500">预览</span>
               </div>
               <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-600 dark:bg-zinc-800/50">
-                <div className="whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-300">
-                  {content.split('\n').map((line, i) => {
-                    if (line.startsWith('## ')) return <h2 key={i} className="text-lg font-bold mt-4 mb-2 text-zinc-900 dark:text-zinc-100">{line.slice(3)}</h2>;
-                    if (line.startsWith('### ')) return <h3 key={i} className="text-base font-semibold mt-3 mb-1 text-zinc-900 dark:text-zinc-100">{line.slice(4)}</h3>;
-                    if (line.startsWith('- ')) return <li key={i} className="text-sm ml-4 text-zinc-600 dark:text-zinc-400">{line.slice(2)}</li>;
-                    if (line.trim() === '') return <br key={i} />;
-                    return <p key={i} className="text-sm text-zinc-700 dark:text-zinc-300">{line}</p>;
-                  })}
-                </div>
+                <MarkdownRenderer content={content} />
               </div>
             </div>
           )}

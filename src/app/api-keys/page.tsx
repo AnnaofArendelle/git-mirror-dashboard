@@ -66,8 +66,10 @@ export default function ApiKeysPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRevokeModal, setShowRevokeModal] = useState<string | null>(null);
-  const [showKeyModal, setShowKeyModal] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [showNewKeyModal, setShowNewKeyModal] = useState(false);
+  const [showKeyDetail, setShowKeyDetail] = useState<string | null>(null);
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [newKeyName, setNewKeyName] = useState('');
   const [newKeyRole, setNewKeyRole] = useState('operator');
 
@@ -77,10 +79,10 @@ export default function ApiKeysPage() {
     return matchRole && matchStatus;
   });
 
-  const handleCopy = (key: string) => {
+  const handleCopy = (id: string, key: string) => {
     navigator.clipboard.writeText(key).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
     });
   };
 
@@ -108,7 +110,8 @@ export default function ApiKeysPage() {
     }, ...prev]);
     setNewKeyName('');
     setShowCreateModal(false);
-    setShowKeyModal(id);
+    setNewlyCreatedKey(fakeKey);
+    setShowNewKeyModal(true);
   };
 
   return (
@@ -159,8 +162,8 @@ export default function ApiKeysPage() {
                     <code className="rounded bg-zinc-100 px-2 py-0.5 font-mono text-xs text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
                       {apiKey.prefix}
                     </code>
-                    <button onClick={() => handleCopy(apiKey.key)} className="rounded p-1 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700" title="复制完整密钥">
-                      {copied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    <button onClick={() => handleCopy(apiKey.id, apiKey.key)} className="rounded p-1 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700" title="复制完整密钥">
+                      {copiedId === apiKey.id ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
                     </button>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-zinc-400">
@@ -174,7 +177,7 @@ export default function ApiKeysPage() {
               </div>
 
               <div className="flex shrink-0 items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={() => setShowKeyModal(apiKey.id)} title="查看详情">
+                <Button variant="ghost" size="sm" onClick={() => setShowKeyDetail(apiKey.id)} title="查看详情">
                   <Eye className="h-4 w-4 text-zinc-500" />
                 </Button>
                 {apiKey.status === 'active' && (
@@ -213,7 +216,7 @@ export default function ApiKeysPage() {
       </Modal>
 
       {/* Show New Key Modal */}
-      <Modal open={!!showKeyModal && !mockApiKeys.find(k => k.id === showKeyModal)} onClose={() => setShowKeyModal(null)} title="密钥已创建">
+      <Modal open={showNewKeyModal} onClose={() => setShowNewKeyModal(false)} title="密钥已创建">
         <div className="space-y-4">
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
             <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">✓ 密钥创建成功</p>
@@ -224,18 +227,67 @@ export default function ApiKeysPage() {
               <input
                 type="text"
                 readOnly
-                value={keys.find(k => k.id === showKeyModal)?.key || ''}
+                value={newlyCreatedKey || ''}
                 className="flex-1 rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 font-mono text-sm dark:border-zinc-600 dark:bg-zinc-800"
               />
-              <Button variant="secondary" size="sm" onClick={() => handleCopy(keys.find(k => k.id === showKeyModal)?.key || '')}>
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              <Button variant="secondary" size="sm" onClick={() => { navigator.clipboard.writeText(newlyCreatedKey || ''); setCopiedId('new_key'); setTimeout(() => setCopiedId(null), 2000); }}>
+                {copiedId === 'new_key' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
           </div>
           <div className="flex justify-end">
-            <Button onClick={() => setShowKeyModal(null)}>我已保存</Button>
+            <Button onClick={() => { setShowNewKeyModal(false); setNewlyCreatedKey(null); }}>我已保存</Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Key Detail Modal */}
+      <Modal open={!!showKeyDetail} onClose={() => setShowKeyDetail(null)} title="密钥详情">
+        {keys.find(k => k.id === showKeyDetail) && (() => {
+          const detail = keys.find(k => k.id === showKeyDetail)!;
+          return (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
+                  <p className="text-xs text-zinc-500">名称</p>
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">{detail.name}</p>
+                </div>
+                <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
+                  <p className="text-xs text-zinc-500">权限</p>
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">{roleLabels[detail.role]}</p>
+                </div>
+                <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
+                  <p className="text-xs text-zinc-500">状态</p>
+                  <p className="font-medium">{detail.status === 'active' ? '🟢 启用' : detail.status === 'expired' ? '🟡 已过期' : '🔴 已撤销'}</p>
+                </div>
+                <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
+                  <p className="text-xs text-zinc-500">创建者</p>
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">{detail.createdBy}</p>
+                </div>
+                <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
+                  <p className="text-xs text-zinc-500">创建时间</p>
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">{formatDate(detail.createdAt)}</p>
+                </div>
+                {detail.lastUsedAt && (
+                  <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
+                    <p className="text-xs text-zinc-500">最近使用</p>
+                    <p className="font-medium text-zinc-900 dark:text-zinc-100">{formatRelativeTime(detail.lastUsedAt)}</p>
+                  </div>
+                )}
+                {detail.expiresAt && (
+                  <div className="rounded-lg bg-zinc-50 p-3 dark:bg-zinc-800/50">
+                    <p className="text-xs text-zinc-500">过期时间</p>
+                    <p className="font-medium text-zinc-900 dark:text-zinc-100">{formatDate(detail.expiresAt)}</p>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">密钥前缀</label>
+                <code className="mt-1 block rounded-lg bg-zinc-100 px-3 py-2 font-mono text-sm dark:bg-zinc-700">{detail.prefix}</code>
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
 
       {/* Revoke Modal */}

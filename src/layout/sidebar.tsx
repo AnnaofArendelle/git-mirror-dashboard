@@ -21,6 +21,7 @@ import {
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useAnnouncements } from '@/lib/store';
+import { getUnacknowledgedAlerts } from '@/lib/data';
 
 const navItems = [
   { href: '/', label: '仪表盘', icon: LayoutDashboard },
@@ -35,7 +36,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const { announcements } = useAnnouncements();
-  const alerts = announcements.filter((a) => a.status === 'draft');
+  const [unreadAlerts] = useState(getUnacknowledgedAlerts);
   const draftAnnouncements = announcements.filter((a) => a.status === 'draft');
 
   return (
@@ -140,7 +141,7 @@ export function Sidebar() {
           </div>
           <div className="mt-2 flex items-center gap-2 text-xs text-zinc-400">
             <Bell className="h-3 w-3" />
-            <span>{alerts.length} 条未读通知</span>
+            <span>{unreadAlerts.length} 条未读通知</span>
           </div>
         </div>
       )}
